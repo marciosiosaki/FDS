@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDS — Capa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div class="cover"><div class="cover-in">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">MDS · CREDENCIAMENTO · FDS</div>
+      <h1>Movimentação de Agendas — Finais de Semana</h1>
+      <p class="sub">Acompanhamento operacional e executivo do credenciamento médico nos finais de semana.</p>
+    </div>
+    <div class="hero-logo"><img src="assets/mds_logo.png" alt="MDS"></div>
+  </div>
+  <div class="hero-divider"></div>
+  <div class="nav-cards">
+    <a class="nav-card c1" href="visao-geral.html"><span class="bar"></span>
+      <div class="num">01</div><h3>Visão Geral</h3>
+      <p>Panorama de consultas, aceite de movimentação e distribuição geográfica.</p><div class="go">Abrir →</div></a>
+    <a class="nav-card c2" href="comparativo.html"><span class="bar"></span>
+      <div class="num">02</div><h3>Comparativo por Área</h3>
+      <p>Desempenho por diretor, gerente, especialidade e unidade.</p><div class="go">Abrir →</div></a>
+    <a class="nav-card c3" href="acoes.html"><span class="bar"></span>
+      <div class="num">03</div><h3>Ações e Exceções</h3>
+      <p>Consultas em risco, exceções e provisão de ações de fechamento.</p><div class="go">Abrir →</div></a>
+    <a class="nav-card c4" href="credenciamento.html"><span class="bar"></span>
+      <div class="num">04</div><h3>Credenciamento — Diretores</h3>
+      <p>Velocímetros de ação vs. meta 100% e composição por diretor.</p><div class="go">Abrir →</div></a>
+  </div>
+  <div class="cover-foot">
+    <div class="upd-card"><div class="lbl">Atualizado até</div><div class="val" id="upd-date">—</div></div>
+    <div class="summary-line" id="cap-summary">—</div>
+  </div>
+  <div class="footer-tricolor" style="margin-top:30px"><i></i><i></i><i></i></div>
+</div></div><script src="assets/plotly.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/theme.js"></script>
+<script src="assets/metrics.js"></script>
+<script src="assets/filters.js"></script>
+<script src="assets/charts.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function(){
+  if(!FDSAuth.guard()) return;
+  var meta = window.FDS.meta;
+  document.getElementById('upd-date').textContent = meta.updated;
+  document.getElementById('cap-summary').innerHTML =
+    '<b>'+meta.pages+'</b> páginas · <b>'+fmtInt(meta.consultas)+'</b> consultas · <b>'+
+    meta.ufs+'</b> UFs · <b>'+meta.director_count+'</b> diretores de credenciamento';
+})();
+</script>
+</body>
+</html>

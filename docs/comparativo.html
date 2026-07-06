@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDS — Comparativo por Área</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="hdr"><div class="hdr-in"><a class="hdr-brand" href="index.html">MDS <span class="dot">·</span> FDS</a><nav class="hdr-nav"><a href="visao-geral.html">Visão Geral</a><a href="comparativo.html" class="active">Comparativo</a><a href="acoes.html">Ações</a><a href="credenciamento.html">Credenciamento</a><a href="medico.html">Detalhe do Médico</a></nav><div class="hdr-right"><img class="hdr-logo" src="assets/mds_logo.png" alt="MDS"><span class="hdr-logout" onclick="FDSAuth.logout()">Sair</span></div></div></header><div class="wrap">
+  <div class="page-head"><div>
+    <div class="eyebrow">MDS · FDS</div>
+    <h1 class="page-title">Comparativo por Área</h1></div></div>
+  <div class="filter-rail" id="flt"></div>
+  <div class="grid cols-2">
+    <div class="card"><div class="card-title">Diretor › Gerente Regional</div>
+      <div class="tbl-scroll" style="max-height:520px"><div id="cmp-matrix"></div></div></div>
+    <div class="card"><div class="card-title">% Aceitou por Clínica</div><div class="plot tall" id="cmp-clinic"></div></div>
+  </div>
+  <div class="grid cols-2" style="margin-top:18px">
+    <div class="card"><div class="card-title">Consultas por Especialidade</div><div class="plot" id="cmp-esp"></div></div>
+    <div class="card"><div class="card-title">Clínicas <span class="hint">· x=Médicos · y=% Aceitou · tamanho=Consultas</span></div><div class="plot" id="cmp-scatter"></div></div>
+  </div>
+</div><div class="wrap" style="padding-top:0">
+  <div class="footer-tricolor"><i></i><i></i><i></i></div>
+  <div class="foot-note">MDS · Credenciamento · FDS — Movimentação de Agendas · Finais de Semana</div>
+</div>
+<script src="assets/plotly.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/theme.js"></script>
+<script src="assets/metrics.js"></script>
+<script src="assets/filters.js"></script>
+<script src="assets/charts.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function(){
+  if(!FDSAuth.guard()) return;
+  var ALL = window.FDS.rows;
+  var defs = [
+    {key:'mes', label:'Mês', options: FDSFilters.monthOptions(ALL)},
+    {key:'uf', label:'UF'},
+    {key:'especialidade', label:'Especialidade'}
+  ];
+  FDSFilters.mount('flt', defs, ALL, render);
+  render(ALL);
+  function render(rows){
+    FDSC.matrixDirGer('cmp-matrix', rows);
+    FDSC.barPctByClinic('cmp-clinic', rows);
+    FDSC.colBySpecialty('cmp-esp', rows);
+    FDSC.scatterClinic('cmp-scatter', rows);
+  }
+})();
+</script>
+</body>
+</html>

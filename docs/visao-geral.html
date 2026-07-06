@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDS — Visão Geral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="hdr"><div class="hdr-in"><a class="hdr-brand" href="index.html">MDS <span class="dot">·</span> FDS</a><nav class="hdr-nav"><a href="visao-geral.html" class="active">Visão Geral</a><a href="comparativo.html">Comparativo</a><a href="acoes.html">Ações</a><a href="credenciamento.html">Credenciamento</a><a href="medico.html">Detalhe do Médico</a></nav><div class="hdr-right"><img class="hdr-logo" src="assets/mds_logo.png" alt="MDS"><span class="hdr-logout" onclick="FDSAuth.logout()">Sair</span></div></div></header><div class="wrap">
+  <div class="page-head"><div>
+    <div class="eyebrow">MDS · MOVIMENTAÇÃO DE AGENDAS — FDS</div>
+    <h1 class="page-title">Visão Geral</h1></div></div>
+  <div class="filter-rail" id="flt"></div>
+  <div class="grid cols-5" style="margin-bottom:18px">
+    <div class="card kpi"><div class="kpi-label">Consultas Marcadas</div><div class="kpi-value" id="k-cons">—</div></div>
+    <div class="card kpi accent-purple"><div class="kpi-label">Médicos Distintos</div><div class="kpi-value" id="k-med">—</div></div>
+    <div class="card kpi accent-teal"><div class="kpi-label">% Aceitou Movimentação</div><div class="kpi-value" id="k-ace">—</div></div>
+    <div class="card kpi accent-amber"><div class="kpi-label">% Entrega Recorrente</div><div class="kpi-value" id="k-rec">—</div></div>
+    <div class="card kpi accent-purple"><div class="kpi-label">Unidades Distintas</div><div class="kpi-value" id="k-uni">—</div></div>
+  </div>
+  <div class="grid cols-3">
+    <div class="card span-2"><div class="card-title">Consultas por mês <span class="hint">· variação % mês a mês</span></div><div class="plot tall" id="viz-combo"></div></div>
+    <div class="card"><div class="card-title">Distribuição por status</div><div class="plot tall" id="viz-donut"></div></div>
+  </div>
+  <div class="grid cols-2" style="margin-top:18px">
+    <div class="card"><div class="card-title">Consultas por Diretor</div><div class="plot" id="viz-bardir"></div></div>
+    <div class="card"><div class="card-title">Mapa por UF <span class="hint">· tamanho = consultas</span></div><div class="plot" id="viz-map"></div></div>
+  </div>
+</div><div class="wrap" style="padding-top:0">
+  <div class="footer-tricolor"><i></i><i></i><i></i></div>
+  <div class="foot-note">MDS · Credenciamento · FDS — Movimentação de Agendas · Finais de Semana</div>
+</div>
+<script src="assets/plotly.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/theme.js"></script>
+<script src="assets/metrics.js"></script>
+<script src="assets/filters.js"></script>
+<script src="assets/charts.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function(){
+  if(!FDSAuth.guard()) return;
+  var ALL = window.FDS.rows;
+  console.assert(FDSM.consultas(ALL)===window.FDS.meta.baseline.consultas, 'baseline consultas mismatch');
+  var defs = [
+    {key:'mes', label:'Mês', options: FDSFilters.monthOptions(ALL)},
+    {key:'diretor', label:'Diretor'},
+    {key:'uf', label:'UF'},
+    {key:'recorrente', label:'Recorrente'},
+    {key:'empresa', label:'Empresa'}
+  ];
+  FDSFilters.mount('flt', defs, ALL, render);
+  render(ALL);
+  function render(rows){
+    document.getElementById('k-cons').textContent = fmtInt(FDSM.consultas(rows));
+    document.getElementById('k-med').textContent  = fmtInt(FDSM.medicosDistintos(rows));
+    document.getElementById('k-ace').textContent  = fmtPct(FDSM.pctAceitou(rows));
+    document.getElementById('k-rec').textContent  = fmtPct(FDSM.pctRecorrente(rows));
+    document.getElementById('k-uni').textContent  = fmtInt(FDSM.unidadesDistintas(rows));
+    FDSC.combo('viz-combo', rows);
+    FDSC.donutStatus('viz-donut', rows);
+    FDSC.barByDirector('viz-bardir', rows);
+    FDSC.brazilMap('viz-map', rows);
+  }
+})();
+</script>
+</body>
+</html>

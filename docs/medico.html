@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDS — Detalhe do Médico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="hdr"><div class="hdr-in"><a class="hdr-brand" href="index.html">MDS <span class="dot">·</span> FDS</a><nav class="hdr-nav"><a href="visao-geral.html">Visão Geral</a><a href="comparativo.html">Comparativo</a><a href="acoes.html">Ações</a><a href="credenciamento.html">Credenciamento</a><a href="medico.html" class="active">Detalhe do Médico</a></nav><div class="hdr-right"><img class="hdr-logo" src="assets/mds_logo.png" alt="MDS"><span class="hdr-logout" onclick="FDSAuth.logout()">Sair</span></div></div></header><div class="wrap">
+  <div class="page-head"><div>
+    <div class="eyebrow">MDS · FDS</div>
+    <h1 class="page-title">Detalhe do Médico</h1></div></div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">Selecione o médico</div>
+    <input id="med-search" class="tbl-search" list="med-list" placeholder="Digite o nome do médico…" style="min-width:440px">
+    <datalist id="med-list"></datalist>
+  </div>
+  <div id="med-empty" class="page-sub">Selecione um médico para ver o detalhe.</div>
+  <div id="med-content" style="display:none">
+    <div class="grid cols-3" style="margin-bottom:18px">
+      <div class="card kpi"><div class="kpi-label">Consultas Marcadas</div><div class="kpi-value" id="m-cons">—</div><div class="kpi-sub" id="m-name"></div></div>
+      <div class="card kpi accent-purple"><div class="kpi-label">Linhas</div><div class="kpi-value" id="m-lin">—</div></div>
+      <div class="card kpi accent-teal"><div class="kpi-label">% Aceitou Movimentação</div><div class="kpi-value" id="m-ace">—</div></div>
+    </div>
+    <div class="grid cols-2" style="margin-bottom:18px">
+      <div class="card"><div class="card-title">Consultas por mês</div><div class="plot" id="med-month"></div></div>
+      <div class="card"><div class="card-title">Distribuição por status</div><div class="plot" id="med-donut"></div></div>
+    </div>
+    <div class="card"><div class="card-title">Linhas do médico</div><div id="med-table"></div></div>
+  </div>
+</div><div class="wrap" style="padding-top:0">
+  <div class="footer-tricolor"><i></i><i></i><i></i></div>
+  <div class="foot-note">MDS · Credenciamento · FDS — Movimentação de Agendas · Finais de Semana</div>
+</div>
+<script src="assets/plotly.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/theme.js"></script>
+<script src="assets/metrics.js"></script>
+<script src="assets/filters.js"></script>
+<script src="assets/charts.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function(){
+  if(!FDSAuth.guard()) return;
+  var ALL = window.FDS.rows;
+  var seen = {}, meds = [];
+  ALL.forEach(function(r){ if(r.cd_medico!=null && !seen[r.cd_medico]){ seen[r.cd_medico]=1; meds.push({cd:r.cd_medico, nome:(r.medico||('#'+r.cd_medico))}); } });
+  meds.sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||''); });
+  var dl = document.getElementById('med-list');
+  meds.forEach(function(m){ var o=document.createElement('option'); o.value=m.nome+' — #'+m.cd; dl.appendChild(o); });
+  var input = document.getElementById('med-search');
+
+  function mesLabel(mes){ if(!mes) return '—'; var mm=parseInt(mes.slice(5,7),10),yy=mes.slice(0,4); return window.MESES[mm-1]+'/'+yy; }
+
+  function selectCd(cd){
+    var rows = ALL.filter(function(r){ return String(r.cd_medico)===String(cd); });
+    if(!rows.length) return;
+    document.getElementById('med-empty').style.display='none';
+    document.getElementById('med-content').style.display='';
+    document.getElementById('m-cons').textContent = fmtInt(FDSM.consultas(rows));
+    document.getElementById('m-lin').textContent  = fmtInt(FDSM.linhas(rows));
+    document.getElementById('m-ace').textContent  = fmtPct(FDSM.pctAceitou(rows));
+    document.getElementById('m-name').textContent = (rows[0].medico||('#'+cd));
+    FDSC.colByMonth('med-month', rows);
+    FDSC.donutStatus('med-donut', rows);
+    var cols = [
+      {title:'Clínica', get:function(r){ return r.clinica||''; }},
+      {title:'Especialidade', get:function(r){ return r.especialidade||''; }},
+      {title:'UF', get:function(r){ return r.uf||''; }},
+      {title:'Mês', get:function(r){ return mesLabel(r.mes); }},
+      {title:'Status', get:function(r){ return '<span class="badge" style="background:'+statusColor(r.aceitou)+'">'+(r.aceitou||'')+'</span>'; }},
+      {title:'Recorrente', get:function(r){ return r.recorrente||''; }},
+      {title:'Consultas', num:true, get:function(r){ return fmtInt(r.consultas); }},
+      {title:'Observação', get:function(r){ return r.observacao||''; }}
+    ];
+    FDSC.tableDetail('med-table', rows, cols, {pageSize:15, searchKeys:['clinica','especialidade','uf','aceitou','observacao']});
+  }
+
+  input.addEventListener('change', function(){
+    var m = input.value.match(/#(\d+)\s*$/);
+    if(m){ selectCd(m[1]); return; }
+    var f = meds.filter(function(x){ return x.nome===input.value; })[0];
+    if(f) selectCd(f.cd);
+  });
+
+  var qm = new URLSearchParams(location.search).get('m');
+  if(qm){
+    var f = meds.filter(function(x){ return String(x.cd)===String(qm); })[0];
+    if(f){ input.value = f.nome+' — #'+f.cd; }
+    selectCd(qm);
+  }
+})();
+</script>
+</body>
+</html>

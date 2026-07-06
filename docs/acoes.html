@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDS — Ações e Exceções</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="hdr"><div class="hdr-in"><a class="hdr-brand" href="index.html">MDS <span class="dot">·</span> FDS</a><nav class="hdr-nav"><a href="visao-geral.html">Visão Geral</a><a href="comparativo.html">Comparativo</a><a href="acoes.html" class="active">Ações</a><a href="credenciamento.html">Credenciamento</a><a href="medico.html">Detalhe do Médico</a></nav><div class="hdr-right"><img class="hdr-logo" src="assets/mds_logo.png" alt="MDS"><span class="hdr-logout" onclick="FDSAuth.logout()">Sair</span></div></div></header><div class="wrap">
+  <div class="page-head"><div>
+    <div class="eyebrow">MDS · FDS</div>
+    <h1 class="page-title">Ações e Exceções — Fechamento de Agendas</h1></div></div>
+  <div class="filter-rail" id="flt"></div>
+  <div class="grid cols-4" style="margin-bottom:18px">
+    <div class="card kpi accent-amber"><div class="kpi-label">Médicos Não Abordados</div><div class="kpi-value" id="k-nab">—</div></div>
+    <div class="card kpi accent-red"><div class="kpi-label">Médicos Não Aceitaram</div><div class="kpi-value" id="k-nac">—</div></div>
+    <div class="card kpi accent-purple"><div class="kpi-label">Linhas Sem Movimentação</div><div class="kpi-value" id="k-smv">—</div></div>
+    <div class="card kpi accent-red"><div class="kpi-label">Consultas em Risco</div><div class="kpi-value" id="k-risk">—</div></div>
+  </div>
+  <div class="grid cols-4" style="margin-bottom:18px">
+    <div class="card kpi accent-amber"><div class="kpi-label">% Ação Pendente</div><div class="kpi-value" id="k-pend">—</div></div>
+    <div class="card kpi accent-teal"><div class="kpi-label">% Ação Definida</div><div class="kpi-value" id="k-def">—</div></div>
+    <div class="card span-2"><div class="card-title">Consultas em Risco por Ação</div><div class="plot short" id="act-risk"></div></div>
+  </div>
+  <div class="grid" style="margin-bottom:18px">
+    <div class="card"><div class="card-title">Linhas por Diretor × Status <span class="hint">· 100% · rótulo = nº de linhas</span></div><div class="plot" id="act-stack"></div></div>
+  </div>
+  <div class="card"><div class="card-title">Detalhamento por médico</div><div id="act-table"></div></div>
+</div><div class="wrap" style="padding-top:0">
+  <div class="footer-tricolor"><i></i><i></i><i></i></div>
+  <div class="foot-note">MDS · Credenciamento · FDS — Movimentação de Agendas · Finais de Semana</div>
+</div>
+<script src="assets/plotly.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/theme.js"></script>
+<script src="assets/metrics.js"></script>
+<script src="assets/filters.js"></script>
+<script src="assets/charts.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function(){
+  if(!FDSAuth.guard()) return;
+  var ALL = window.FDS.rows;
+  var defs = [
+    {key:'aceitou', label:'Status', options: window.STATUS_ORDER},
+    {key:'recorrente', label:'Entrega Recorrente'},
+    {key:'uf', label:'UF'},
+    {key:'diretor', label:'Diretor'}
+  ];
+  FDSFilters.mount('flt', defs, ALL, render);
+  render(ALL);
+  function render(rows){
+    document.getElementById('k-nab').textContent  = fmtInt(FDSM.medicosNaoAbordados(rows));
+    document.getElementById('k-nac').textContent  = fmtInt(FDSM.medicosNaoAceitaram(rows));
+    document.getElementById('k-smv').textContent  = fmtInt(FDSM.linhasSemMov(rows));
+    document.getElementById('k-risk').textContent = fmtInt(FDSM.consultasEmRisco(rows));
+    document.getElementById('k-pend').textContent = fmtPct(FDSM.pctAcaoPendente(rows));
+    document.getElementById('k-def').textContent  = fmtPct(FDSM.pctAcaoDefinida(rows));
+    FDSC.barRiskByAcao('act-risk', rows);
+    FDSC.stacked100('act-stack', rows, 'diretor', function(r){return r.aceitou||'—';}, statusColor, window.STATUS_ORDER);
+    var cols = [
+      {title:'Médico', get:function(r){ return '<a class="medlink" href="medico.html?m='+(r.cd_medico!=null?r.cd_medico:'')+'">'+(r.medico||'')+'</a>'; }},
+      {title:'Especialidade', get:function(r){ return r.especialidade||''; }},
+      {title:'Clínica', get:function(r){ return r.clinica||''; }},
+      {title:'UF', get:function(r){ return r.uf||''; }},
+      {title:'Diretor', get:function(r){ return r.diretor||''; }},
+      {title:'Status', get:function(r){ return '<span class="badge" style="background:'+statusColor(r.aceitou)+'">'+(r.aceitou||'')+'</span>'; }},
+      {title:'Consultas', num:true, get:function(r){ return fmtInt(r.consultas); }},
+      {title:'Ação', get:function(r){ return acaoLabel(r.acao); }},
+      {title:'Obs. Cred', get:function(r){ return r.obs_cred||''; }}
+    ];
+    FDSC.tableDetail('act-table', rows, cols, {pageSize:20,
+      searchKeys:['medico','especialidade','clinica','uf','diretor','aceitou','acao','obs_cred']});
+  }
+})();
+</script>
+</body>
+</html>
