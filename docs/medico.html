@@ -68,14 +68,14 @@
     FDSC.colByMonth('med-month', rows);
     FDSC.donutStatus('med-donut', rows);
     var cols = [
-      {title:'Clínica', get:function(r){ return r.clinica||''; }},
-      {title:'Especialidade', get:function(r){ return r.especialidade||''; }},
-      {title:'UF', get:function(r){ return r.uf||''; }},
+      {title:'Clínica', get:function(r){ return escapeHtml(r.clinica); }},
+      {title:'Especialidade', get:function(r){ return escapeHtml(r.especialidade); }},
+      {title:'UF', get:function(r){ return escapeHtml(r.uf); }},
       {title:'Mês', get:function(r){ return mesLabel(r.mes); }},
-      {title:'Status', get:function(r){ return '<span class="badge" style="background:'+statusColor(r.aceitou)+'">'+(r.aceitou||'')+'</span>'; }},
-      {title:'Recorrente', get:function(r){ return r.recorrente||''; }},
+      {title:'Status', get:function(r){ return '<span class="badge" style="background:'+statusColor(r.aceitou)+'">'+escapeHtml(r.aceitou)+'</span>'; }},
+      {title:'Recorrente', get:function(r){ return escapeHtml(r.recorrente); }},
       {title:'Consultas', num:true, get:function(r){ return fmtInt(r.consultas); }},
-      {title:'Observação', get:function(r){ return r.observacao||''; }}
+      {title:'Observação', get:function(r){ return escapeHtml(r.observacao); }}
     ];
     FDSC.tableDetail('med-table', rows, cols, {pageSize:15, searchKeys:['clinica','especialidade','uf','aceitou','observacao']});
   }

@@ -89,6 +89,34 @@ select.fds-filter{appearance:none;background:#fff;border:1px solid var(--border)
   background-repeat:no-repeat;background-position:right 10px center}
 select.fds-filter:focus{outline:2px solid var(--orange);outline-offset:1px}
 
+/* -------- multi-select dropdown -------- */
+.ms{position:relative}
+.ms-btn{width:100%;text-align:left;appearance:none;background:#fff;border:1px solid var(--border);
+  border-radius:9px;padding:8px 30px 8px 11px;font-family:inherit;font-size:13px;font-weight:600;
+  color:var(--ink);cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' fill='none' stroke='%235A505C' stroke-width='1.6'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center}
+.ms-btn:focus{outline:2px solid var(--orange);outline-offset:1px}
+.ms-panel{position:absolute;z-index:60;top:calc(100% + 5px);left:0;min-width:100%;background:#fff;
+  border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(26,14,20,.28);
+  padding:7px;max-height:260px;overflow:auto}
+.ms-panel label{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:7px;font-size:13px;
+  font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap}
+.ms-panel label:hover{background:var(--card-alt)}
+.ms-panel input[type=checkbox]{accent-color:var(--orange);width:15px;height:15px}
+.ms-hidden{display:none}
+
+/* -------- progress meter (parte-para-todo vs. meta) -------- */
+.meter-sub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+.meter-headline{font-size:32px;font-weight:800;color:var(--ink);line-height:1;margin-top:8px}
+.meter-track{display:flex;height:22px;border-radius:11px;overflow:hidden;background:var(--card-alt);
+  margin:16px 0 12px;gap:2px}
+.meter-fill{height:100%}
+.meter-legend{display:flex;gap:20px;font-size:12.5px;flex-wrap:wrap}
+.meter-legend .lg{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink)}
+.meter-legend .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.meter-note{font-size:11px;color:var(--ink2);margin-top:12px}
+
 /* -------- tables -------- */
 .table-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
 .tbl-search{border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-family:inherit;font-size:13px;min-width:260px}

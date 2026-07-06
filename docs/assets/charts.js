@@ -31,6 +31,12 @@
     rows.forEach(function(r){ cnt[r.aceitou]=(cnt[r.aceitou]||0)+1; });
     var labels=[], values=[], colors=[];
     order.forEach(function(s){ if(cnt[s]){ labels.push(s); values.push(cnt[s]); colors.push(statusColor(s)); } });
+    // categorias fora do catálogo (status em branco/novo) também aparecem — nunca somem do total
+    Object.keys(cnt).forEach(function(s){
+      if(order.indexOf(s)>=0) return;
+      var lbl=(s==='null'||s==='undefined'||s==='')?'(sem status)':s;
+      labels.push(lbl); values.push(cnt[s]); colors.push(statusColor(s));
+    });
     Plotly.react(el(id), [{type:'pie', hole:.62, labels:labels, values:values, sort:false,
       marker:{colors:colors}, textinfo:'percent', texttemplate:'%{percent:.0%}',
       hovertemplate:'%{label}<br>%{value:,} linhas (%{percent})<extra></extra>'}],
@@ -117,11 +123,13 @@
     if(catOrder){ rows.forEach(function(r){ var c=catFn(r); if(cats.indexOf(c)<0) cats.push(c); }); }
     var traces = cats.map(function(c){
       var yv = groups.map(function(g){ return (cnt[g][c]||0); });
+      var col = colorFn(c);
       return {type:'bar', name:c, y:groups, x:yv, orientation:'h',
-        marker:{color:colorFn(c)},
-        text:yv.map(function(v){ return v>0? fmtInt(v): ''; }), texttemplate:'%{text}',
-        textposition:'inside', insidetextanchor:'middle', textfont:{color:'#fff', size:11},
-        hovertemplate:'%{y} · '+c+'<br>%{x} linhas<extra></extra>'};
+        marker:{color:col}, customdata:yv,
+        text:yv.map(function(v){ return v>0? fmtInt(v): ''; }), texttemplate:'<b>%{text}</b>',
+        textposition:'inside', insidetextanchor:'middle',
+        textfont:{color:textColorFor(col), size:14, family:'Montserrat, sans-serif'},
+        hovertemplate:'%{y} · '+c+'<br>%{customdata} linhas<extra></extra>'};
     });
     Plotly.react(el(id), traces, layout({ barmode:'stack', barnorm:'percent',
       xaxis:{ticksuffix:'%', range:[0,100], gridcolor:T.border}, yaxis:{automargin:true},
@@ -156,9 +164,9 @@
       '<td class="num">'+fmtPct(FDSM.pctRecorrente(g))+'</td>'; }
     var html='<table class="matrix"><thead><tr><th>Diretor / Gerente</th><th>Consultas</th><th>Médicos</th><th>% Aceitou</th><th>% Recorrente</th></tr></thead><tbody>';
     Object.keys(byDir).sort().forEach(function(d){
-      html+='<tr class="dir-row"><td>'+d+'</td>'+cells(byDir[d].rows)+'</tr>';
+      html+='<tr class="dir-row"><td>'+escapeHtml(d)+'</td>'+cells(byDir[d].rows)+'</tr>';
       Object.keys(byDir[d].ger).sort().forEach(function(g){
-        html+='<tr class="ger-row"><td>'+g+'</td>'+cells(byDir[d].ger[g])+'</tr>'; });
+        html+='<tr class="ger-row"><td>'+escapeHtml(g)+'</td>'+cells(byDir[d].ger[g])+'</tr>'; });
     });
     html+='</tbody></table>';
     node.innerHTML=html;
@@ -194,6 +202,23 @@
       node.querySelectorAll('.pager button').forEach(function(b){ b.addEventListener('click', function(){ page += (b.getAttribute('data-a')==='next'?1:-1); render(); }); });
     }
     render();
+  };
+
+  // ---- MEDIDOR de progresso de Ação (Definida vs Pendente, meta 100%) ----
+  C.acaoMeter = function(id, rows){
+    var def = FDSM.pctAcaoDefinida(rows), pend = FDSM.pctAcaoPendente(rows);
+    el(id).innerHTML =
+      '<div class="meter-sub">% Ação Definida · meta 100%</div>'+
+      '<div class="meter-headline">'+fmtPct(def)+'</div>'+
+      '<div class="meter-track">'+
+        '<div class="meter-fill" style="width:'+(def*100).toFixed(2)+'%;background:'+T.green+'"></div>'+
+        '<div class="meter-fill" style="width:'+(pend*100).toFixed(2)+'%;background:'+T.amber+'"></div>'+
+      '</div>'+
+      '<div class="meter-legend">'+
+        '<span class="lg"><span class="dot" style="background:'+T.green+'"></span>Definida '+fmtPct(def)+'</span>'+
+        '<span class="lg"><span class="dot" style="background:'+T.amber+'"></span>Pendente '+fmtPct(pend)+'</span>'+
+      '</div>'+
+      '<div class="meter-note">'+fmtInt(FDSM.linhasPendentesAcao(rows))+' linhas ainda sem ação definida</div>';
   };
 
   window.FDSC = C;
