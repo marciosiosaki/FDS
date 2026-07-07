@@ -136,6 +136,28 @@
       showlegend:true, legend:{orientation:'h', y:1.08, x:0, font:{size:11}}, margin:{l:8,r:14,t:30,b:36}}), CFG);
   };
 
+  // barras empilhadas ABSOLUTAS (contagem de itens por grupo × categoria); rótulo = valor absoluto.
+  // Página Unidades: cada unidade contribui 1 ao seu diretor, em OK ou Pendente.
+  C.stackedAbs = function(id, items, groupKey, catFn, colorFn, catOrder){
+    var groups = Array.from(new Set(items.map(function(r){return r[groupKey];}).filter(function(v){return v!=null;}))).sort();
+    var cats = catOrder ? catOrder.slice() : Array.from(new Set(items.map(catFn)));
+    var cnt={}; groups.forEach(function(g){ cnt[g]={}; });
+    items.forEach(function(r){ var g=r[groupKey]; if(g==null) return; var c=catFn(r); if(!(g in cnt)) cnt[g]={}; cnt[g][c]=(cnt[g][c]||0)+1; });
+    var traces = cats.map(function(c){
+      var yv = groups.map(function(g){ return (cnt[g][c]||0); });
+      var col = colorFn(c);
+      return {type:'bar', name:c, y:groups, x:yv, orientation:'h',
+        marker:{color:col},
+        text:yv.map(function(v){ return v>0? fmtInt(v): ''; }), texttemplate:'<b>%{text}</b>',
+        textposition:'inside', insidetextanchor:'middle',
+        textfont:{color:textColorFor(col), size:13, family:'Montserrat, sans-serif'},
+        hovertemplate:'%{y} · '+c+'<br>%{x} unidades<extra></extra>'};
+    });
+    Plotly.react(el(id), traces, layout({ barmode:'stack',
+      xaxis:{gridcolor:T.border, rangemode:'tozero'}, yaxis:{automargin:true},
+      showlegend:true, legend:{orientation:'h', y:1.08, x:0, font:{size:11}}, margin:{l:8,r:14,t:30,b:36}}), CFG);
+  };
+
   C.gauge = function(id, pct, title){
     Plotly.react(el(id), [{type:'indicator', mode:'gauge+number', value:(pct||0)*100,
       number:{suffix:'%', valueformat:'.1f', font:{size:30, color:T.ink}},

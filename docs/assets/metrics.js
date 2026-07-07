@@ -58,5 +58,31 @@
   M.groupSum = function(r,key,valFn){ var map={}; r.forEach(function(x){ var k=(x[key]==null?'—':x[key]); map[k]=(map[k]||0)+(valFn?valFn(x):1); }); return map; };
   M.distinctVals = function(r,key){ var s=new Set(); r.forEach(function(x){ if(x[key]!=null && x[key]!=='') s.add(x[key]); }); return Array.from(s); };
 
+  // prontidão de fechamento por unidade (regra §3.6, redefinida 2026-07-07): 1 objeto por
+  // CD_UNIDADE, agregando SOBRE as linhas já filtradas -> só entram unidades presentes no
+  // recorte (evita o bug do Power BI de listar toda unidade como "OK" fora do filtro).
+  // Só linhas RECORRENTES contam; resolvida = SIM, ou NÃO com ação real (≠ Prospectar/
+  // Pendente/vazia), ou PA/Não abordado com ação 'Sem Ação'. O resto bloqueia.
+  M.unidadesProntidao = function(r){
+    var by = {};
+    for(var i=0;i<r.length;i++){
+      var x=r[i], u=x.cd_unidade; if(u==null) continue;
+      var o = by[u] || (by[u] = {cd_unidade:u, clinica:x.clinica, uf:x.uf, empresa:x.empresa,
+                                 diretor:x.diretor, linhas:0, linhas_bloqueio:0, consultas_bloqueio:0});
+      o.linhas += 1;
+      var rec = (x.recorrente==='SIM');
+      var st = x.aceitou;
+      var k = (x.acao==null) ? '' : x.acao.toString().replace(/\s+/g,' ').trim().toUpperCase();
+      var acaoReal = (k!=='' && k!=='PROSPECTAR' && k.indexOf('PENDENTE')<0);
+      var resolvida = (st==='SIM')
+                   || (st==='NÃO' && acaoReal)
+                   || (st!=='SIM' && st!=='NÃO' && k==='SEM AÇÃO');
+      var bloq = rec && !resolvida;
+      if(bloq){ o.linhas_bloqueio += 1; o.consultas_bloqueio += (x.consultas||0); }
+    }
+    return Object.keys(by).map(function(k){ var o=by[k];
+      o.status = o.linhas_bloqueio>0 ? 'Pendente' : 'OK'; return o; });
+  };
+
   window.FDSM = M;
 })();
