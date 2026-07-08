@@ -3,7 +3,7 @@ window.FDS_THEME = {
   wine:"#6E323E", wineDark:"#3C1C26", card:"#FFFFFF", border:"#EDEBF0", cardAlt:"#F7F5F8",
   ink:"#1C1820", ink2:"#5A505C", orange:"#E08438",
   purple:"#8A5CC7", purpleDeep:"#5D3B96", lavender:"#CBA7EA", teal:"#2EB7A1",
-  blue:"#2563EB", green:"#34C759", red:"#EB5757", amber:"#FFAF32", slate:"#94A3B8",
+  blue:"#2563EB", green:"#34C759", red:"#EB5757", amber:"#FFAF32", pleito:"#FFC24B", slate:"#94A3B8",
   dataColors:["#8A5CC7","#2EB7A1","#5D3B96","#CBA7EA","#E08438","#2563EB","#DB2777","#94A3B8","#34C759","#EB5757"]
 };
 window.MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];

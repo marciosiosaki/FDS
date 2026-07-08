@@ -137,7 +137,7 @@
   };
 
   // barras empilhadas ABSOLUTAS (contagem de itens por grupo × categoria); rótulo = valor absoluto.
-  // Página Unidades: cada unidade contribui 1 ao seu diretor, em OK ou Pendente.
+  // Página Unidades: cada unidade contribui 1 ao seu diretor, em OK, Pleito Pendente ou Pendente.
   C.stackedAbs = function(id, items, groupKey, catFn, colorFn, catOrder){
     var groups = Array.from(new Set(items.map(function(r){return r[groupKey];}).filter(function(v){return v!=null;}))).sort();
     var cats = catOrder ? catOrder.slice() : Array.from(new Set(items.map(catFn)));

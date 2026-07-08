@@ -63,25 +63,40 @@
   // recorte (evita o bug do Power BI de listar toda unidade como "OK" fora do filtro).
   // Só linhas RECORRENTES contam; resolvida = SIM, ou NÃO com ação real (≠ Prospectar/
   // Pendente/vazia), ou PA/Não abordado com ação 'Sem Ação'. O resto bloqueia.
+  // nível de uma linha p/ prontidão de fechamento (regra §3.6 — 3 níveis, oficial 2026-07-08):
+  // só linhas ACEITOU=='NÃO' contam; AÇÃO 'Sem Ação' -> ok (verde);
+  // 'Manter PA aberto'/'Manter Att em Hospital Casa Forte' -> pleito (amarela);
+  // resto (em branco, Prospectar, Pendente…, desconhecidas) -> bloqueio (vermelha).
+  function nivelLinha(x){
+    if(x.aceitou!=='NÃO') return null;
+    var k = (x.acao==null) ? '' : x.acao.toString().replace(/\s+/g,' ').trim().toUpperCase();
+    if(k==='SEM AÇÃO') return 'ok';
+    if(k==='MANTER PA ABERTO' || k==='MANTER ATT EM HOSPITAL CASA FORTE') return 'pleito';
+    return 'bloqueio';
+  }
+  // contadores de LINHAS por nível sobre o recorte filtrado (painel "Linhas por status")
+  M.linhasPorNivel = function(r){
+    var out = {ok:0, pleito:0, bloqueio:0};
+    for(var i=0;i<r.length;i++){ var n=nivelLinha(r[i]); if(n) out[n]++; }
+    return out;
+  };
   M.unidadesProntidao = function(r){
     var by = {};
     for(var i=0;i<r.length;i++){
       var x=r[i], u=x.cd_unidade; if(u==null) continue;
       var o = by[u] || (by[u] = {cd_unidade:u, clinica:x.clinica, uf:x.uf, empresa:x.empresa,
-                                 diretor:x.diretor, linhas:0, linhas_bloqueio:0, consultas_bloqueio:0});
+                                 diretor:x.diretor, linhas:0, linhas_bloqueio:0, linhas_pleito:0,
+                                 consultas_bloqueio:0});
       o.linhas += 1;
-      var rec = (x.recorrente==='SIM');
-      var st = x.aceitou;
-      var k = (x.acao==null) ? '' : x.acao.toString().replace(/\s+/g,' ').trim().toUpperCase();
-      var acaoReal = (k!=='' && k!=='PROSPECTAR' && k.indexOf('PENDENTE')<0);
-      var resolvida = (st==='SIM')
-                   || (st==='NÃO' && acaoReal)
-                   || (st!=='SIM' && st!=='NÃO' && k==='SEM AÇÃO');
-      var bloq = rec && !resolvida;
-      if(bloq){ o.linhas_bloqueio += 1; o.consultas_bloqueio += (x.consultas||0); }
+      var n = nivelLinha(x);
+      if(n==='bloqueio'){ o.linhas_bloqueio += 1; o.consultas_bloqueio += (x.consultas||0); }
+      else if(n==='pleito'){ o.linhas_pleito += 1; }
     }
+    // pior nível vence: >=1 vermelha -> Pendente; senão >=1 amarela -> Pleito Pendente; senão OK
     return Object.keys(by).map(function(k){ var o=by[k];
-      o.status = o.linhas_bloqueio>0 ? 'Pendente' : 'OK'; return o; });
+      o.status = o.linhas_bloqueio>0 ? 'Pendente'
+               : (o.linhas_pleito>0 ? 'Pleito Pendente' : 'OK');
+      return o; });
   };
 
   window.FDSM = M;

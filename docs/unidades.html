@@ -14,20 +14,29 @@
   <div class="page-head"><div>
     <div class="eyebrow">MDS · FDS · CREDENCIAMENTO</div>
     <h1 class="page-title">Unidades — Prontidão para Fechamento</h1>
-    <p class="page-sub">Base: médicos <b>recorrentes</b>. Unidade <b>OK</b> quando toda linha recorrente está resolvida — aceitou <b>SIM</b>, ou não-aceitou com <b>ação real</b> do credenciamento (≠ Prospectar, ≠ Pendente, ≠ em branco; PA só com &ldquo;Sem Ação&rdquo;). Qualquer linha recorrente não resolvida deixa a unidade <b>Pendente</b>.</p>
+    <p class="page-sub">Considera as linhas de médico que <b>NÃO aceitou</b> a movimentação, classificadas pela <b>Ação</b> do credenciamento: 🟢 <b>OK</b> = &ldquo;Sem Ação&rdquo; · 🟡 <b>Pleito Pendente</b> = &ldquo;Manter PA aberto&rdquo; / &ldquo;Manter Att em Hospital Casa Forte&rdquo; · 🔴 <b>Pendente</b> = demais (em branco, Prospectar, Pendente de qualquer natureza ou ação desconhecida). A unidade assume o <b>pior nível</b> entre suas linhas &ldquo;NÃO&rdquo;.</p>
   </div></div>
   <div class="filter-rail" id="flt"></div>
   <div class="grid cols-4" style="margin-bottom:18px">
     <div class="card kpi accent-green"><div class="kpi-label">Unidades OK Fechamento</div><div class="kpi-value" id="k-uok">—</div></div>
+    <div class="card kpi accent-yellow"><div class="kpi-label">Unidades Pleito Pendente</div><div class="kpi-value" id="k-upl">—</div></div>
     <div class="card kpi accent-red"><div class="kpi-label">Unidades Pendentes Fechamento</div><div class="kpi-value" id="k-upe">—</div></div>
     <div class="card kpi"><div class="kpi-label">% Unidades OK Fechamento</div><div class="kpi-value" id="k-pok">—</div></div>
-    <div class="card kpi accent-amber"><div class="kpi-label">Consultas Bloqueio Fechamento</div><div class="kpi-value" id="k-cbl">—</div></div>
   </div>
   <div class="grid cols-2" style="margin-bottom:18px">
-    <div class="card"><div class="card-title">% Unidades OK <span class="hint">· meta 100%</span></div><div class="plot" id="uni-gauge" style="height:300px"></div></div>
-    <div class="card"><div class="card-title">Unidades por Diretor <span class="hint">· OK vs. Pendente · rótulo = nº de unidades</span></div><div class="plot" id="uni-stack"></div></div>
+    <div class="card">
+      <div class="card-title">% Unidades OK <span class="hint">· meta 100%</span></div>
+      <div class="plot" id="uni-gauge" style="height:260px"></div>
+      <div class="card-title" style="margin-top:14px">Linhas por status <span class="hint">· linhas &ldquo;NÃO&rdquo; classificadas pela ação</span></div>
+      <div class="tri-stats">
+        <div class="tri-stat ok"><div class="lbl">Linhas OK</div><div class="val" id="l-ok">—</div></div>
+        <div class="tri-stat pleito"><div class="lbl">Linhas Pleito Pendente</div><div class="val" id="l-pl">—</div></div>
+        <div class="tri-stat bloq"><div class="lbl">Linhas Pendente</div><div class="val" id="l-bl">—</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Unidades por Diretor <span class="hint">· OK · Pleito Pendente · Pendente · rótulo = nº de unidades</span></div><div class="plot tall" id="uni-stack"></div></div>
   </div>
-  <div class="card"><div class="card-title">Prontidão por unidade <span class="hint">· ordenado por linhas de bloqueio</span></div><div id="uni-table"></div></div>
+  <div class="card"><div class="card-title">Prontidão por unidade <span class="hint">· ordenado por severidade: Pendente → Pleito Pendente → OK</span></div><div id="uni-table"></div></div>
 </div><div class="wrap" style="padding-top:0">
   <div class="footer-tricolor"><i></i><i></i><i></i></div>
   <div class="foot-note">MDS · Credenciamento · FDS — Movimentação de Agendas · Finais de Semana</div>
@@ -43,6 +52,10 @@
 (function(){
   if(!FDSAuth.guard()) return;
   var ALL = window.FDS.rows;
+  var T = window.FDS_THEME;
+  var UNI_ORDER = ['OK','Pleito Pendente','Pendente'];
+  var SEV = {'Pendente':0, 'Pleito Pendente':1, 'OK':2};   // ordem de severidade da tabela
+  function uniColor(s){ return s==='OK'? T.green : (s==='Pleito Pendente'? T.pleito : T.red); }
   var defs = [
     {key:'uf', label:'UF'},
     {key:'diretor', label:'Diretor'},
@@ -53,26 +66,29 @@
   function render(rows){
     // agrega SOBRE o recorte filtrado -> só entram unidades com linha no filtro
     var uni = FDSM.unidadesProntidao(rows);
-    var ok=0, pend=0, cbloq=0;
-    uni.forEach(function(u){ if(u.status==='OK') ok++; else pend++; cbloq+=u.consultas_bloqueio; });
+    var ok=0, plei=0, pend=0;
+    uni.forEach(function(u){ if(u.status==='OK') ok++; else if(u.status==='Pleito Pendente') plei++; else pend++; });
     var total=uni.length, pctOk = total? ok/total : 0;
     document.getElementById('k-uok').textContent = fmtInt(ok);
+    document.getElementById('k-upl').textContent = fmtInt(plei);
     document.getElementById('k-upe').textContent = fmtInt(pend);
     document.getElementById('k-pok').textContent = fmtPct(pctOk);
-    document.getElementById('k-cbl').textContent = fmtInt(cbloq);
+    var ln = FDSM.linhasPorNivel(rows);
+    document.getElementById('l-ok').textContent = fmtInt(ln.ok);
+    document.getElementById('l-pl').textContent = fmtInt(ln.pleito);
+    document.getElementById('l-bl').textContent = fmtInt(ln.bloqueio);
     FDSC.gauge('uni-gauge', pctOk, '');
-    FDSC.stackedAbs('uni-stack', uni, 'diretor', function(u){ return u.status; },
-      function(c){ return c==='OK'? window.FDS_THEME.green : window.FDS_THEME.red; }, ['OK','Pendente']);
+    FDSC.stackedAbs('uni-stack', uni, 'diretor', function(u){ return u.status; }, uniColor, UNI_ORDER);
     var tbl = uni.slice().sort(function(a,b){
-      return (b.linhas_bloqueio-a.linhas_bloqueio) || (b.linhas-a.linhas)
+      return (SEV[a.status]-SEV[b.status]) || (b.linhas_bloqueio-a.linhas_bloqueio)
+             || (b.linhas_pleito-a.linhas_pleito)
              || String(a.clinica||'').localeCompare(String(b.clinica||'')); });
     var cols = [
       {title:'Clínica', get:function(r){ return escapeHtml(r.clinica); }},
       {title:'UF', get:function(r){ return escapeHtml(r.uf); }},
-      {title:'Linhas', num:true, get:function(r){ return fmtInt(r.linhas); }},
       {title:'Linhas Bloqueio', num:true, get:function(r){ return fmtInt(r.linhas_bloqueio); }},
-      {title:'Status', get:function(r){ var col=(r.status==='OK')? window.FDS_THEME.green : window.FDS_THEME.red;
-        return '<span class="badge" style="background:'+col+'">'+r.status+'</span>'; }}
+      {title:'Status', get:function(r){
+        return '<span class="badge" style="background:'+uniColor(r.status)+'">'+r.status+'</span>'; }}
     ];
     FDSC.tableDetail('uni-table', tbl, cols, {pageSize:20, searchKeys:['clinica','uf','status']});
   }
